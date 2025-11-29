@@ -8,6 +8,7 @@ import model.Cliente;
 import model.Prestador;
 import service.AgendamentoService;
 import service.ClienteService;
+import service.OrcamentoService;
 import service.PrestadorService;
 import service.TipoServicoService;
 
@@ -24,7 +25,8 @@ public class Main {
         // --- Inicialização dos serviços e controladores ---
         ClienteService clienteService = new ClienteService();
         PrestadorService prestadorService = new PrestadorService();
-        AgendamentoService agendamentoService = new AgendamentoService(prestadorService);
+        OrcamentoService orcamentoService = new OrcamentoService();
+        AgendamentoService agendamentoService = new AgendamentoService(prestadorService, orcamentoService);
         TipoServicoService tipoServicoService = new TipoServicoService();
 
         ClienteController clienteController = new ClienteController(clienteService);
@@ -66,7 +68,7 @@ public class Main {
                     listarPrestadores(prestadorController);
                     break;
                 case 5:
-                    agendarServico(scanner, agendamentoController, clienteController, tipoServicoController);
+                    agendarServico(scanner, agendamentoController, clienteController, tipoServicoController, orcamentoService);
                     break;
                 case 6:
                     listarAgendamentos(agendamentoController);
@@ -154,7 +156,7 @@ public class Main {
         }
     }
 
-    private static void agendarServico(Scanner scanner, AgendamentoController agendamentoController, ClienteController clienteController, TipoServicoController tipoServicoController) {
+    private static void agendarServico(Scanner scanner, AgendamentoController agendamentoController, ClienteController clienteController, TipoServicoController tipoServicoController, OrcamentoService orcamentoService) {
         System.out.println("\n--- Agendamento de Serviço ---");
         System.out.print("Digite o ID do Cliente: ");
         int idCliente = scanner.nextInt();
@@ -168,7 +170,7 @@ public class Main {
         System.out.println("Selecione o tipo de serviço:");
         List<TipoServico> todosOsServicos = tipoServicoController.listarTiposDeServico();
         for (int i = 0; i < todosOsServicos.size(); i++) {
-            System.out.printf("%d. %s\n", (i + 1), todosOsServicos.get(i).getDescricao());
+            System.out.printf("%d. %s (R$%.2f/hora)\n", (i + 1), todosOsServicos.get(i).getDescricao(), todosOsServicos.get(i).getValorPorHora());
         }
         System.out.print("Opção: ");
         int opServico = scanner.nextInt();
@@ -179,12 +181,29 @@ public class Main {
         }
         TipoServico tipoServico = todosOsServicos.get(opServico - 1);
 
+        System.out.print("Digite a duração estimada do serviço (em horas): ");
+        int duracao = scanner.nextInt();
+        scanner.nextLine();
+        if (duracao <= 0) {
+            System.out.println("Duração inválida.");
+            return;
+        }
+
+        double orcamento = orcamentoService.calcularOrcamento(tipoServico, duracao);
+        System.out.printf("O orçamento para este serviço é: R$%.2f. Deseja confirmar? (S/N): ", orcamento);
+        String confirmacao = scanner.nextLine();
+
+        if (!confirmacao.equalsIgnoreCase("S")) {
+            System.out.println("Agendamento cancelado.");
+            return;
+        }
+
         System.out.print("Digite a data e hora do agendamento (dd/MM/yyyy HH:mm): ");
         String dataHoraStr = scanner.nextLine();
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
             LocalDateTime dataHora = LocalDateTime.parse(dataHoraStr, formatter);
-            agendamentoController.agendarServico(cliente, tipoServico, dataHora);
+            agendamentoController.agendarServico(cliente, tipoServico, dataHora, duracao);
         } catch (DateTimeParseException e) {
             System.out.println("Formato de data/hora inválido. Use dd/MM/yyyy HH:mm.");
         }

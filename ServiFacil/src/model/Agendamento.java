@@ -12,14 +12,18 @@ public class Agendamento {
     private TipoServico tipoServico;
     private LocalDateTime dataHora;
     private StatusAgendamento status;
+    private int duracaoEstimadaHoras;
+    private double orcamento;
     private static int proximoId = 1;
 
-    public Agendamento(Cliente cliente, Prestador prestador, TipoServico tipoServico, LocalDateTime dataHora) {
+    public Agendamento(Cliente cliente, Prestador prestador, TipoServico tipoServico, LocalDateTime dataHora, int duracaoEstimadaHoras, double orcamento) {
         this.id = proximoId++;
         this.cliente = cliente;
         this.prestador = prestador;
         this.tipoServico = tipoServico;
         this.dataHora = dataHora;
+        this.duracaoEstimadaHoras = duracaoEstimadaHoras;
+        this.orcamento = orcamento;
         this.status = StatusAgendamento.PENDENTE; // Status inicial
     }
 
@@ -51,6 +55,14 @@ public class Agendamento {
         this.status = status;
     }
 
+    public int getDuracaoEstimadaHoras() {
+        return duracaoEstimadaHoras;
+    }
+
+    public double getOrcamento() {
+        return orcamento;
+    }
+
     @Override
     public String toString() {
         return "Agendamento{" +
@@ -59,6 +71,8 @@ public class Agendamento {
                 ", prestador=" + prestador.getNome() +
                 ", tipoServico=" + tipoServico.getDescricao() +
                 ", dataHora=" + dataHora +
+                ", duracaoEstimada=" + duracaoEstimadaHoras + "h" +
+                ", orcamento=R$" + String.format("%.2f", orcamento) +
                 ", status=" + status.getDescricao() +
                 '}';
     }
