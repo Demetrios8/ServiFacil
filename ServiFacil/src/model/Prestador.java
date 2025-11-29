@@ -2,6 +2,7 @@ package model;
 
 import enums.TipoServico;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Prestador {
     private int id;
@@ -44,11 +45,14 @@ public class Prestador {
 
     @Override
     public String toString() {
+        String servicosStr = servicos.stream()
+                                     .map(TipoServico::getDescricao)
+                                     .collect(Collectors.joining(", "));
         return "Prestador{" +
                 "id=" + id +
                 ", nome='" + nome + '\'' +
                 ", telefone='" + telefone + '\'' +
-                ", servicos=" + servicos +
+                ", servicos=[" + servicosStr + "]" +
                 ", disponivel=" + disponivel +
                 '}';
     }

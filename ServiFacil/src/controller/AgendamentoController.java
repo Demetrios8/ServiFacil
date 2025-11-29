@@ -2,6 +2,7 @@ package controller;
 
 import model.Agendamento;
 import model.Cliente;
+import enums.StatusAgendamento;
 import enums.TipoServico;
 import service.AgendamentoService;
 
@@ -18,6 +19,14 @@ public class AgendamentoController {
 
     public Agendamento agendarServico(Cliente cliente, TipoServico tipoServico, LocalDateTime dataHora, int duracaoEstimadaHoras) {
         return agendamentoService.agendarServico(cliente, tipoServico, dataHora, duracaoEstimadaHoras);
+    }
+
+    public Agendamento buscarAgendamentoPorId(int id) {
+        return agendamentoService.buscarAgendamentoPorId(id);
+    }
+
+    public boolean atualizarStatusAgendamento(int id, StatusAgendamento novoStatus) {
+        return agendamentoService.atualizarStatusAgendamento(id, novoStatus);
     }
 
     public Collection<Agendamento> listarAgendamentos() {

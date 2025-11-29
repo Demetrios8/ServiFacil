@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public class AgendamentoService {
 
@@ -23,10 +24,8 @@ public class AgendamentoService {
     }
 
     public Agendamento agendarServico(Cliente cliente, TipoServico tipoServico, LocalDateTime dataHora, int duracaoEstimadaHoras) {
-        // 1. Encontrar prestadores disponíveis para o tipo de serviço
         List<Prestador> prestadoresDisponiveis = prestadorService.buscarPrestadoresPorTipoServico(tipoServico);
 
-        // 2. Verificar se algum deles está livre no horário solicitado
         Prestador prestadorAlocado = null;
         for (Prestador p : prestadoresDisponiveis) {
             if (isPrestadorLivre(p, dataHora)) {
@@ -36,10 +35,7 @@ public class AgendamentoService {
         }
 
         if (prestadorAlocado != null) {
-            // 3. Calcular o orçamento
             double orcamento = orcamentoService.calcularOrcamento(tipoServico, duracaoEstimadaHoras);
-
-            // 4. Criar e salvar o agendamento
             Agendamento novoAgendamento = new Agendamento(cliente, prestadorAlocado, tipoServico, dataHora, duracaoEstimadaHoras, orcamento);
             agendamentos.add(novoAgendamento);
             System.out.println("Agendamento realizado com sucesso: " + novoAgendamento);
@@ -56,6 +52,25 @@ public class AgendamentoService {
                                 a.getDataHora().isEqual(dataHora) &&
                                 a.getStatus() != StatusAgendamento.CANCELADO &&
                                 a.getStatus() != StatusAgendamento.CONCLUIDO);
+    }
+
+    public Agendamento buscarAgendamentoPorId(int id) {
+        for (Agendamento agendamento : agendamentos) {
+            if (agendamento.getId() == id) {
+                return agendamento;
+            }
+        }
+        return null;
+    }
+
+    public boolean atualizarStatusAgendamento(int id, StatusAgendamento novoStatus) {
+        Agendamento agendamento = buscarAgendamentoPorId(id);
+        if (agendamento != null) {
+            agendamento.setStatus(novoStatus);
+            System.out.println("Status do agendamento " + id + " atualizado para: " + novoStatus.getDescricao());
+            return true;
+        }
+        return false;
     }
 
     public Collection<Agendamento> listarAgendamentos() {

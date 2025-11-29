@@ -2,6 +2,7 @@ import controller.AgendamentoController;
 import controller.ClienteController;
 import controller.PrestadorController;
 import controller.TipoServicoController;
+import enums.StatusAgendamento;
 import enums.TipoServico;
 import model.Agendamento;
 import model.Cliente;
@@ -35,7 +36,7 @@ public class Main {
         TipoServicoController tipoServicoController = new TipoServicoController(tipoServicoService);
 
         Scanner scanner = new Scanner(System.in);
-        int opcao;
+        int opcao = -1;
 
         System.out.println("### Bem-vindo ao ServiFácil ###");
 
@@ -47,12 +48,18 @@ public class Main {
             System.out.println("4. Listar Prestadores");
             System.out.println("5. Agendar Serviço");
             System.out.println("6. Listar Agendamentos");
-            System.out.println("7. Listar Tipos de Serviço");
+            System.out.println("7. Atualizar Status de Agendamento");
+            System.out.println("8. Listar Tipos de Serviço");
             System.out.println("0. Sair");
             System.out.print("Escolha uma opção: ");
 
-            opcao = scanner.nextInt();
-            scanner.nextLine(); // Consumir a nova linha
+            try {
+                opcao = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("\nErro: Por favor, digite um número válido.");
+                opcao = -1; // Reseta para um valor inválido para continuar no loop
+                continue;
+            }
 
             switch (opcao) {
                 case 1:
@@ -74,6 +81,9 @@ public class Main {
                     listarAgendamentos(agendamentoController);
                     break;
                 case 7:
+                    atualizarStatusAgendamento(scanner, agendamentoController);
+                    break;
+                case 8:
                     tipoServicoController.imprimirTiposDeServico();
                     break;
                 case 0:
@@ -86,6 +96,15 @@ public class Main {
         } while (opcao != 0);
 
         scanner.close();
+    }
+
+    private static int lerOpcao(Scanner scanner) {
+        try {
+            return Integer.parseInt(scanner.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Erro: Entrada inválida. Por favor, digite um número.");
+            return -1; // Retorna um valor que indica erro
+        }
     }
 
     private static void cadastrarCliente(Scanner scanner, ClienteController clienteController) {
@@ -125,8 +144,7 @@ public class Main {
                 System.out.printf("%d. %s\n", (i + 1), todosOsServicos.get(i).getDescricao());
             }
             System.out.print("Opção: ");
-            opServico = scanner.nextInt();
-            scanner.nextLine();
+            opServico = lerOpcao(scanner);
 
             if (opServico > 0 && opServico <= todosOsServicos.size()) {
                 TipoServico servicoEscolhido = todosOsServicos.get(opServico - 1);
@@ -136,6 +154,8 @@ public class Main {
                 } else {
                     System.out.println("Serviço já adicionado.");
                 }
+            } else if (opServico != 0 && opServico != -1) {
+                System.out.println("Opção de serviço inválida.");
             }
         } while (opServico != 0);
 
@@ -159,8 +179,9 @@ public class Main {
     private static void agendarServico(Scanner scanner, AgendamentoController agendamentoController, ClienteController clienteController, TipoServicoController tipoServicoController, OrcamentoService orcamentoService) {
         System.out.println("\n--- Agendamento de Serviço ---");
         System.out.print("Digite o ID do Cliente: ");
-        int idCliente = scanner.nextInt();
-        scanner.nextLine();
+        int idCliente = lerOpcao(scanner);
+        if (idCliente == -1) return;
+
         Cliente cliente = clienteController.buscarClientePorId(idCliente);
         if (cliente == null) {
             System.out.println("Cliente não encontrado.");
@@ -173,8 +194,9 @@ public class Main {
             System.out.printf("%d. %s (R$%.2f/hora)\n", (i + 1), todosOsServicos.get(i).getDescricao(), todosOsServicos.get(i).getValorPorHora());
         }
         System.out.print("Opção: ");
-        int opServico = scanner.nextInt();
-        scanner.nextLine();
+        int opServico = lerOpcao(scanner);
+        if (opServico == -1) return;
+
         if (opServico <= 0 || opServico > todosOsServicos.size()) {
             System.out.println("Opção de serviço inválida.");
             return;
@@ -182,8 +204,9 @@ public class Main {
         TipoServico tipoServico = todosOsServicos.get(opServico - 1);
 
         System.out.print("Digite a duração estimada do serviço (em horas): ");
-        int duracao = scanner.nextInt();
-        scanner.nextLine();
+        int duracao = lerOpcao(scanner);
+        if (duracao == -1) return;
+
         if (duracao <= 0) {
             System.out.println("Duração inválida.");
             return;
@@ -216,6 +239,36 @@ public class Main {
             System.out.println("Nenhum agendamento realizado.");
         } else {
             agendamentos.forEach(System.out::println);
+        }
+    }
+
+    private static void atualizarStatusAgendamento(Scanner scanner, AgendamentoController agendamentoController) {
+        System.out.println("\n--- Atualizar Status de Agendamento ---");
+        System.out.print("Digite o ID do agendamento que deseja atualizar: ");
+        int idAgendamento = lerOpcao(scanner);
+        if (idAgendamento == -1) return;
+
+        Agendamento agendamento = agendamentoController.buscarAgendamentoPorId(idAgendamento);
+        if (agendamento == null) {
+            System.out.println("Agendamento não encontrado.");
+            return;
+        }
+
+        System.out.println("Agendamento selecionado: " + agendamento);
+        System.out.println("Selecione o novo status:");
+        StatusAgendamento[] statuses = StatusAgendamento.values();
+        for (int i = 0; i < statuses.length; i++) {
+            System.out.printf("%d. %s\n", (i + 1), statuses[i].getDescricao());
+        }
+        System.out.print("Opção: ");
+        int opStatus = lerOpcao(scanner);
+        if (opStatus == -1) return;
+
+        if (opStatus > 0 && opStatus <= statuses.length) {
+            StatusAgendamento novoStatus = statuses[opStatus - 1];
+            agendamentoController.atualizarStatusAgendamento(idAgendamento, novoStatus);
+        } else {
+            System.out.println("Opção de status inválida.");
         }
     }
 }
