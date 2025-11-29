@@ -1,6 +1,6 @@
 package service;
 
-import enums.TipoServico;
+import model.TipoServico;
 
 public class OrcamentoService {
 

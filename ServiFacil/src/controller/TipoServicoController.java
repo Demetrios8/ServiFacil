@@ -1,6 +1,6 @@
 package controller;
 
-import enums.TipoServico;
+import model.TipoServico;
 import service.TipoServicoService;
 
 import java.util.List;
@@ -15,6 +15,10 @@ public class TipoServicoController {
 
     public List<TipoServico> listarTiposDeServico() {
         return tipoServicoService.listarTiposDeServico();
+    }
+
+    public TipoServico criarTipoServico(String descricao, double valorPorHora) {
+        return tipoServicoService.criarTipoServico(descricao, valorPorHora);
     }
 
     public void imprimirTiposDeServico() {
