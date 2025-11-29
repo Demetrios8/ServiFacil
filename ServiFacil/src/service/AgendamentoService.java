@@ -10,18 +10,19 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class AgendamentoService {
 
     private final Collection<Agendamento> agendamentos = new ArrayList<>();
     private final PrestadorService prestadorService;
+    private final OrcamentoService orcamentoService;
 
-    public AgendamentoService(PrestadorService prestadorService) {
+    public AgendamentoService(PrestadorService prestadorService, OrcamentoService orcamentoService) {
         this.prestadorService = prestadorService;
+        this.orcamentoService = orcamentoService;
     }
 
-    public Agendamento agendarServico(Cliente cliente, TipoServico tipoServico, LocalDateTime dataHora) {
+    public Agendamento agendarServico(Cliente cliente, TipoServico tipoServico, LocalDateTime dataHora, int duracaoEstimadaHoras) {
         // 1. Encontrar prestadores disponíveis para o tipo de serviço
         List<Prestador> prestadoresDisponiveis = prestadorService.buscarPrestadoresPorTipoServico(tipoServico);
 
@@ -35,8 +36,11 @@ public class AgendamentoService {
         }
 
         if (prestadorAlocado != null) {
-            // 3. Criar e salvar o agendamento
-            Agendamento novoAgendamento = new Agendamento(cliente, prestadorAlocado, tipoServico, dataHora);
+            // 3. Calcular o orçamento
+            double orcamento = orcamentoService.calcularOrcamento(tipoServico, duracaoEstimadaHoras);
+
+            // 4. Criar e salvar o agendamento
+            Agendamento novoAgendamento = new Agendamento(cliente, prestadorAlocado, tipoServico, dataHora, duracaoEstimadaHoras, orcamento);
             agendamentos.add(novoAgendamento);
             System.out.println("Agendamento realizado com sucesso: " + novoAgendamento);
             return novoAgendamento;

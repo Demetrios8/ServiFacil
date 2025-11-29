@@ -16,8 +16,8 @@ public class AgendamentoController {
         this.agendamentoService = agendamentoService;
     }
 
-    public Agendamento agendarServico(Cliente cliente, TipoServico tipoServico, LocalDateTime dataHora) {
-        return agendamentoService.agendarServico(cliente, tipoServico, dataHora);
+    public Agendamento agendarServico(Cliente cliente, TipoServico tipoServico, LocalDateTime dataHora, int duracaoEstimadaHoras) {
+        return agendamentoService.agendarServico(cliente, tipoServico, dataHora, duracaoEstimadaHoras);
     }
 
     public Collection<Agendamento> listarAgendamentos() {
