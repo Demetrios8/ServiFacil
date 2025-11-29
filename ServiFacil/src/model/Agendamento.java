@@ -1,7 +1,6 @@
 package model;
 
 import enums.StatusAgendamento;
-import enums.TipoServico;
 
 import java.time.LocalDateTime;
 
@@ -14,6 +13,7 @@ public class Agendamento {
     private StatusAgendamento status;
     private int duracaoEstimadaHoras;
     private double orcamento;
+    private Avaliacao avaliacao; // Novo campo
     private static int proximoId = 1;
 
     public Agendamento(Cliente cliente, Prestador prestador, TipoServico tipoServico, LocalDateTime dataHora, int duracaoEstimadaHoras, double orcamento) {
@@ -24,7 +24,7 @@ public class Agendamento {
         this.dataHora = dataHora;
         this.duracaoEstimadaHoras = duracaoEstimadaHoras;
         this.orcamento = orcamento;
-        this.status = StatusAgendamento.PENDENTE; // Status inicial
+        this.status = StatusAgendamento.PENDENTE;
     }
 
     public int getId() {
@@ -63,8 +63,17 @@ public class Agendamento {
         return orcamento;
     }
 
+    public Avaliacao getAvaliacao() {
+        return avaliacao;
+    }
+
+    public void setAvaliacao(Avaliacao avaliacao) {
+        this.avaliacao = avaliacao;
+    }
+
     @Override
     public String toString() {
+        String avaliacaoStr = (avaliacao != null) ? ", avaliacao=" + avaliacao.getNota() + " estrelas" : "";
         return "Agendamento{" +
                 "id=" + id +
                 ", cliente=" + cliente.getNome() +
@@ -74,6 +83,7 @@ public class Agendamento {
                 ", duracaoEstimada=" + duracaoEstimadaHoras + "h" +
                 ", orcamento=R$" + String.format("%.2f", orcamento) +
                 ", status=" + status.getDescricao() +
+                avaliacaoStr +
                 '}';
     }
 }

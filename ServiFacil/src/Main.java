@@ -1,13 +1,15 @@
 import controller.AgendamentoController;
+import controller.AvaliacaoController;
 import controller.ClienteController;
 import controller.PrestadorController;
 import controller.TipoServicoController;
 import enums.StatusAgendamento;
-import enums.TipoServico;
 import model.Agendamento;
 import model.Cliente;
 import model.Prestador;
+import model.TipoServico;
 import service.AgendamentoService;
+import service.AvaliacaoService;
 import service.ClienteService;
 import service.OrcamentoService;
 import service.PrestadorService;
@@ -27,13 +29,17 @@ public class Main {
         ClienteService clienteService = new ClienteService();
         PrestadorService prestadorService = new PrestadorService();
         OrcamentoService orcamentoService = new OrcamentoService();
-        AgendamentoService agendamentoService = new AgendamentoService(prestadorService, orcamentoService);
         TipoServicoService tipoServicoService = new TipoServicoService();
+        AgendamentoService agendamentoService = new AgendamentoService(prestadorService, orcamentoService);
+        AvaliacaoService avaliacaoService = new AvaliacaoService();
+
+        prestadorService.setAgendamentoService(agendamentoService);
 
         ClienteController clienteController = new ClienteController(clienteService);
         PrestadorController prestadorController = new PrestadorController(prestadorService);
         AgendamentoController agendamentoController = new AgendamentoController(agendamentoService);
         TipoServicoController tipoServicoController = new TipoServicoController(tipoServicoService);
+        AvaliacaoController avaliacaoController = new AvaliacaoController(avaliacaoService);
 
         Scanner scanner = new Scanner(System.in);
         int opcao = -1;
@@ -49,17 +55,12 @@ public class Main {
             System.out.println("5. Agendar Serviço");
             System.out.println("6. Listar Agendamentos");
             System.out.println("7. Atualizar Status de Agendamento");
-            System.out.println("8. Listar Tipos de Serviço");
+            System.out.println("8. Avaliar Serviço");
+            System.out.println("9. Listar Tipos de Serviço");
             System.out.println("0. Sair");
             System.out.print("Escolha uma opção: ");
 
-            try {
-                opcao = Integer.parseInt(scanner.nextLine());
-            } catch (NumberFormatException e) {
-                System.out.println("\nErro: Por favor, digite um número válido.");
-                opcao = -1; // Reseta para um valor inválido para continuar no loop
-                continue;
-            }
+            opcao = lerOpcao(scanner);
 
             switch (opcao) {
                 case 1:
@@ -84,10 +85,15 @@ public class Main {
                     atualizarStatusAgendamento(scanner, agendamentoController);
                     break;
                 case 8:
+                    avaliarServico(scanner, agendamentoController, avaliacaoController);
+                    break;
+                case 9:
                     tipoServicoController.imprimirTiposDeServico();
                     break;
                 case 0:
                     System.out.println("\nSaindo do sistema... Até logo!");
+                    break;
+                case -1: // Erro de input já tratado em lerOpcao
                     break;
                 default:
                     System.out.println("\nOpção inválida! Tente novamente.");
@@ -103,7 +109,17 @@ public class Main {
             return Integer.parseInt(scanner.nextLine());
         } catch (NumberFormatException e) {
             System.out.println("Erro: Entrada inválida. Por favor, digite um número.");
-            return -1; // Retorna um valor que indica erro
+            return -1;
+        }
+    }
+
+    private static double lerDouble(Scanner scanner) {
+        try {
+            String input = scanner.nextLine().replace(',', '.');
+            return Double.parseDouble(input);
+        } catch (NumberFormatException e) {
+            System.out.println("Erro: Entrada inválida. Por favor, digite um valor numérico.");
+            return -1.0;
         }
     }
 
@@ -136,13 +152,15 @@ public class Main {
         String telefone = scanner.nextLine();
 
         List<TipoServico> servicosPrestador = new ArrayList<>();
-        List<TipoServico> todosOsServicos = tipoServicoController.listarTiposDeServico();
         int opServico;
         do {
             System.out.println("Selecione os serviços que o prestador oferece (digite 0 para finalizar):");
+            List<TipoServico> todosOsServicos = tipoServicoController.listarTiposDeServico();
             for (int i = 0; i < todosOsServicos.size(); i++) {
                 System.out.printf("%d. %s\n", (i + 1), todosOsServicos.get(i).getDescricao());
             }
+            int opcaoOutro = todosOsServicos.size() + 1;
+            System.out.printf("%d. Outro (especificar)\n", opcaoOutro);
             System.out.print("Opção: ");
             opServico = lerOpcao(scanner);
 
@@ -153,6 +171,15 @@ public class Main {
                     System.out.println(servicoEscolhido.getDescricao() + " adicionado.");
                 } else {
                     System.out.println("Serviço já adicionado.");
+                }
+            } else if (opServico == opcaoOutro) {
+                System.out.print("Digite a descrição do novo serviço: ");
+                String desc = scanner.nextLine();
+                System.out.print("Digite o valor por hora para '" + desc + "': ");
+                double valor = lerDouble(scanner);
+                if (valor >= 0) {
+                    TipoServico novoServico = tipoServicoController.criarTipoServico(desc, valor);
+                    servicosPrestador.add(novoServico);
                 }
             } else if (opServico != 0 && opServico != -1) {
                 System.out.println("Opção de serviço inválida.");
@@ -172,7 +199,11 @@ public class Main {
         if (prestadores.isEmpty()) {
             System.out.println("Nenhum prestador cadastrado.");
         } else {
-            prestadores.forEach(System.out::println);
+            for (Prestador p : prestadores) {
+                double notaMedia = prestadorController.calcularNotaMedia(p);
+                String notaStr = (notaMedia > 0) ? String.format(" (Nota Média: %.1f)", notaMedia) : " (Sem avaliações)";
+                System.out.println(p.toString().replace("}", notaStr + "}"));
+            }
         }
     }
 
@@ -197,18 +228,18 @@ public class Main {
         int opServico = lerOpcao(scanner);
         if (opServico == -1) return;
 
-        if (opServico <= 0 || opServico > todosOsServicos.size()) {
+        TipoServico tipoServico;
+        if (opServico > 0 && opServico <= todosOsServicos.size()) {
+            tipoServico = todosOsServicos.get(opServico - 1);
+        } else {
             System.out.println("Opção de serviço inválida.");
             return;
         }
-        TipoServico tipoServico = todosOsServicos.get(opServico - 1);
 
         System.out.print("Digite a duração estimada do serviço (em horas): ");
         int duracao = lerOpcao(scanner);
-        if (duracao == -1) return;
-
         if (duracao <= 0) {
-            System.out.println("Duração inválida.");
+            if(duracao != -1) System.out.println("Duração inválida.");
             return;
         }
 
@@ -270,5 +301,31 @@ public class Main {
         } else {
             System.out.println("Opção de status inválida.");
         }
+    }
+
+    private static void avaliarServico(Scanner scanner, AgendamentoController agendamentoController, AvaliacaoController avaliacaoController) {
+        System.out.println("\n--- Avaliar Serviço ---");
+        System.out.print("Digite o ID do agendamento que deseja avaliar: ");
+        int idAgendamento = lerOpcao(scanner);
+        if (idAgendamento == -1) return;
+
+        Agendamento agendamento = agendamentoController.buscarAgendamentoPorId(idAgendamento);
+        if (agendamento == null) {
+            System.out.println("Agendamento não encontrado.");
+            return;
+        }
+
+        System.out.print("Digite sua nota (1 a 5): ");
+        int nota = lerOpcao(scanner);
+        if (nota == -1) return;
+        if (nota < 1 || nota > 5) {
+            System.out.println("Nota inválida. Deve ser entre 1 e 5.");
+            return;
+        }
+
+        System.out.print("Deixe um comentário (opcional): ");
+        String comentario = scanner.nextLine();
+
+        avaliacaoController.avaliarServico(agendamento, nota, comentario);
     }
 }

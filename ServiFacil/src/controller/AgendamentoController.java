@@ -3,7 +3,7 @@ package controller;
 import model.Agendamento;
 import model.Cliente;
 import enums.StatusAgendamento;
-import enums.TipoServico;
+import model.TipoServico;
 import service.AgendamentoService;
 
 import java.time.LocalDateTime;

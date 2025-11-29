@@ -1,6 +1,5 @@
 package model;
 
-import enums.TipoServico;
 import java.util.List;
 import java.util.stream.Collectors;
 

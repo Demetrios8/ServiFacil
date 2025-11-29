@@ -1,7 +1,7 @@
 package controller;
 
 import model.Prestador;
-import enums.TipoServico;
+import model.TipoServico;
 import service.PrestadorService;
 
 import java.util.Collection;
@@ -29,5 +29,9 @@ public class PrestadorController {
 
     public List<Prestador> buscarPrestadoresPorTipoServico(TipoServico tipoServico) {
         return prestadorService.buscarPrestadoresPorTipoServico(tipoServico);
+    }
+
+    public double calcularNotaMedia(Prestador prestador) {
+        return prestadorService.calcularNotaMedia(prestador);
     }
 }
